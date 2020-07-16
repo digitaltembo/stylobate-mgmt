@@ -1,5 +1,5 @@
 # README
-<code>
+<pre>
  ,---.   ,--.           ,--.       ,--.             ,--.          
 '   .-',-'  '-.,--. ,--.|  | ,---. |  |-.  ,--,--.,-'  '-. ,---.  
 `.  `-.'-.  .-' \  '  / |  || .-. || .-. '' ,-.  |'-.  .-'| .-. : 
@@ -7,9 +7,9 @@
 `-----'  `--'  .-'  /   `--' `---'  `---'  `--`--'  `--'   `----' 
                `---'                                              
                          Mgmt
-</code>
+</pre>
 
-Management script for managing applications based off of [stylobate](https://github.com/digitaltembo/stylobate).
+Script for managing [Stylobate](https://github.com/digitaltembo/stylobate)-based applications.
 
 Inspired basically by Flask's `manage.py`, it is mostly thin wrappers around bash scripts that would be tedious to type in full each time.
 Adapted from a previous collection of a bunch of aliases and bash scripts
