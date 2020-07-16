@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='stylobate-mgmt',
-    version='0.1',
+    version='0.0.1',
     description='Manage instances of Stylobate starter projects',
     url='http://github.com/digitaltembo/stylobate-mgmt',
     author='Nolan Hawkins',
