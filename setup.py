@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='stylobate-mgmt',
-    version='0.0.1',
+    version='0.0.2',
     description='Manage instances of Stylobate-based projects',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -24,4 +24,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.1',
+    test_suite='nose.collector',
+    tests_require=['nose'],
 )

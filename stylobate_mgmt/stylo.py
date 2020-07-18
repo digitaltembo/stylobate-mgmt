@@ -2,6 +2,8 @@ import sys
 import argparse
 import os
 
+from .commands.utils import CommandContext
+
 from .commands import *
 
 """
@@ -34,6 +36,16 @@ stylo db --up/-u
          --gen-migrations/-g
 """
 
+COMMAND_MAP = {
+    'db': DB,
+    'build': Build,
+    'init': Init,
+    'logs': Logs,
+    'run': Run,
+    'shell': Shell,
+    'stop': Stop
+}
+
 def main():
     args = sys.argv 
 
@@ -46,28 +58,19 @@ def main():
 
     base = basedir()
 
-    command_map = {
-        'db': DB,
-        'build': Build,
-        'init': Init,
-        'logs': Logs,
-        'run': Run,
-        'shell': Shell,
-        'stop': Stop
-    }
 
-    if command not in command_map:
+    if command not in COMMAND_MAP:
         print('stylo command must be one of init, build, run, logs, shell, stop, or db')
         return
 
-    if command == 'init' and base:
-        print('Cannot create new Stylobate project from within existing project {}'.format(base))
-        return
     if command != 'init' and not base:
         print('This must be executed from within a Stylobate project directory')
         return
+    
+    run(command, CommandContext(base), args[2:])
 
-    command_map[command]().execute(args[2:], base)
+def run(command, commandContext, args):
+    COMMAND_MAP[command](commandContext).run(args)
 
 def help():
     print('''

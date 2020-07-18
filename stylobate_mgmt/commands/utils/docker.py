@@ -1,54 +1,45 @@
-def container_name(is_dev):
-    return ('dev' if is_dev else 'prod') + '-stylobate'
+# docker configurations
+DEV = 'dev-compose.yaml'
+PROD = 'prod-compose.yaml'
+SSL = 'ssl-compose.yaml'
 
-def image_name(username_args, is_dev):
-    docker_prefix = username_args[0] + '/' if username_args else ''
-    return docker_prefix + container_name(is_dev)
+# docker images
+CERTBOT = 'certbot'
+NGINX = 'nginx'
+BACKEND = 'backend'
+FRONTEND = 'frontend'
 
-def build_command(username_args, is_dev):
-    return 'docker build -f docker/Dockerfile.{} -t {} .'.format('dev' if is_dev else 'prod', image_name(username_args, is_dev))
-
-def run_command(username_args, is_dev):
-    if is_dev:
-        return '''
-            docker run
-                    -it
-                    -d
-                    --name {}
-                    -p 3000:3000
-                    -p 8000:8000
-                    -e PORT="8000"
-                    -v $(pwd)/backend:/app
-                    -v $(pwd)/frontend:/frontend
-                    {} /docker-dev-start.sh
-        '''.format(container_name(is_dev), image_name(username_args, is_dev))
-    else:
-        return '''
-            docker run
-                -it
-                -d
-                --name {}
-                -p 80:80
-                -e PORT="80"
-                -e IS_PROD="TRUE"
-                -e SECRET_KEY=$(uuidgen)
-            {} /docker-prod-start.sh"
-        '''.format(container_name(is_dev), image_name(username_args, is_dev))
+AVAILABLE_DOCKER_CONTAINERS = {
+    DEV: [BACKEND, FRONTEND],
+    PROD: [BACKEND, NGINX],
+    SSL: [BACKEND, NGINX, CERTBOT]
+}
 
 
-def logs_command(container_name, style):
-    if style == 'less':
-        return 'docker logs {} | less'.format(container_name)
-    elif style == 'cat':
-        return 'docker logs {}'.format(container_name)
-    else:
-        return 'docker logs -f {}'.format(container_name)
+def get_env(args):
+    if args.docker_prod:
+        return  PROD
+    if args.docker_ssl:
+        return  SSL
+    return DEV
 
+def get_img(args):
+    if args.certbot:
+        return CERTBOT
+    if args.nginx:
+        return NGINX
+    if args.front_end:
+        return FRONTEND
+    return BACKEND
 
-def shell_command(container_name):
-    return 'docker exec -it {} /bin/bash'.format(container_name)
+def env_has_container(docker_env, docker_container):
+    return docker_container in AVAILABLE_DOCKER_CONTAINERS[docker_env]
 
-def stop_command(container_name):
-    return 'docker container stop {} && docker rm {}'.format(container_name, container_name)
+def container_name(project_name, docker_env, docker_container):
 
-
+    suffix = ''
+    if docker_env == PROD:
+        suffix = '_prod'
+    elif docker_env == SSL:
+        suffix = '_ssl'
+    return '{}_{}{}_1'.format(project_name, docker_container, suffix)

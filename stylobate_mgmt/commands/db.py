@@ -1,7 +1,7 @@
 import os
 
-from .utils import execute, Command
-
+from .utils import Command
+SUPERUSER_INSERTION_FORMAT = '$(venv/bin/python -c "from db.models import User; User.create_superuser(\'{}\', \'{}\')")'
 class DB(Command):
     '''
         stylo db --up/-u
@@ -46,22 +46,49 @@ class DB(Command):
             help='Enter DB CLI'
         )
 
-    def main(self, args, basedir):
-        if not (args.up or args.up_one or args.down or args.gen_migrations):
-            print('At least one of --up, --up-one, --down, --shell, or --gen-migrations must be specified')
+        parser.add_argument(
+            '--execute', '-x',
+            metavar='SQL_CMD',
+            nargs=1,
+            help='Run a SQL commadn (remember your semicolon!)'
+        )
 
-        wd = [basedir, 'backend']
+    def main(self, args):
+        if not (args.up or args.up_one or args.down or args.shell or args.execute or args.gen_migrations):
+            self.print('At least one of --up, --up-one, --down, --shell, or --gen-migrations must be specified')
+            return
         if args.up:
-            execute('alembic upgrade head', wd)
-        if args.up_one:
-            execute('alembic upgrade +1', wd)
+            self.upgrade_all()
+        elif args.up_one:
+            self.upgrade_once()
         if args.down:
-            execute('alembic downgrade -1', wd)
+            self.downgrade()
         if args.gen_migrations:
-            if args.gen_migrations == True:
-                execute('alembic revision --autogenerate', wd)
-            else:
-                execute('alembic revision --autogenerate -m "{}"'.format(args.gen_migrations), wd)
+            self.gen_migrations('' if args.gen_migrations == True else args.gen_migrations)
         if args.shell:
-            execute('sqlite3 the.db', wd)
+            self.enter_shell()
+        if args.execute:
+            self.execute_sql(args.execute[0])
+
+    def upgrade_all(self):
+        self.execute('venv/bin/alembic upgrade head', 'backend')
+
+    def upgrade_once(self):
+        self.execute('venv/bin/alembic upgrade +1', 'backend')
+
+    def downgrade(self):
+        self.execute('venv/bin/alembic downgrade -1', 'backend')
+
+    def gen_migrations(self, message=''):
+        message = ' -m "{}"'.format(message)
+        self.execute('venv/bin/alembic revision --autogenerate' + message, 'backend')
+
+    def enter_shell(self):
+        self.execute('sqlite3 the.db', 'backend')
+
+    def execute_sql(self, sql):
+        self.execute('sqlite3 the.db "{}"'.format(sql), 'backend')
+
+    def add_superuser(self, email, password):
+        self.execute_sql(SUPERUSER_INSERTION_FORMAT.format(email, password))
 

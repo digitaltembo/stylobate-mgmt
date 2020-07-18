@@ -1,6 +1,6 @@
 import os
 
-from .utils import docker, execute, Command
+from .utils import docker, Command
 
 class Stop(Command):
     '''
@@ -24,11 +24,21 @@ class Stop(Command):
             action='store_true',
             help='Stops the production docker container'
         )
+        parser.add_argument(
+            '--docker-ssl', '-s',
+            action='store_true',
+            help='Stops the ssl docker container'
+        )
 
-    def main(self, args, basedir):
-        if not (args.docker_dev or args.docker_prod or args.front_end):
-            print('One of --docker-dev or --docker-prod must be specified')
+    def main(self, args):
+        if not (args.docker_dev or args.docker_prod or args.docker_ssl):
+            self.print('One of --docker-dev, --docker-prod, or --docker-ssl must be specified')
+            return
+        docker_env = docker.get_env(args)
 
-        execute(docker.stop_command(docker.container_name(is_dev=args.docker_dev)))
+        self.stop_docker(docker_env)
+    
+    def stop_docker(self, docker_env):
+        self.execute('docker-compose -f {} down'.format(docker_env))
 
 

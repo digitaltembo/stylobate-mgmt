@@ -1,6 +1,10 @@
 import os
 
-from .utils import docker, execute, Command
+from .utils import docker, Command
+
+TAIL = 'docker-compose -f {} logs -f'
+LESS = 'docker-compose -f {} logs | less'
+CAT  = 'docker-compose -f {} logs'
 
 class Logs(Command):
     '''
@@ -18,13 +22,19 @@ class Logs(Command):
         parser.add_argument(
             '--docker-dev', '-d',
             action='store_true',
-            help='Build the dev docker image'
+            help='Display logs from the dev docker image'
         )
         parser.add_argument(
             '--docker-prod', '-D',
             action='store_true',
-            help='Build the production docker image'
+            help='Display logs from the production docker image'
         )
+        parser.add_argument(
+            '--docker-ssl', '-s',
+            action='store_true',
+            help='Display logs from the production docker image with SSL'
+        )
+
         parser.add_argument(
             '--less', '-l',
             action='store_true',
@@ -43,17 +53,20 @@ class Logs(Command):
             help='Cats the logs'
         )
 
-    def main(self, args, basedir):
-        if not (args.docker_dev or args.docker_prod):
-            print('At least one of --docker-dev or --docker-prod must be specified')
+    def main(self, args):
+        if not (args.docker_dev or args.docker_prod or args.docker_ssl):
+            self.print('At least one of --docker-dev, --docker-prod, --docker-ssl, must be specified')
+            return
 
-
-        style = 'tail'
+        style = TAIL
         if args.less:
-            style = 'less'
+            style = LESS
         elif args.cat:
-            style = 'cat'
+            style = CAT
+        docker_env = docker.get_env(args)
+        self.display_docker_logs(docker_env, style)
 
-        execute(docker.logs_command(docker.container_name(is_dev=args.docker_dev), style))
+    def display_docker_logs(self, docker_env, style):
+        self.execute(style.format(docker_env))
 
 

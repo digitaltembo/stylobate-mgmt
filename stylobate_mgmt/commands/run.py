@@ -1,6 +1,6 @@
 import os
 
-from .utils import docker, execute, Command
+from .utils import docker, Command
 
 class Run(Command):
     '''
@@ -26,6 +26,12 @@ class Run(Command):
             help='Run the production docker image'
         )
         parser.add_argument(
+            '--docker-ssl', '-s',
+            action='store_true',
+            help='Run the production docker image with SSL'
+        )
+
+        parser.add_argument(
             '--front-end', '-f',
             action='store_true',
             help='Run the react-scripts front-end server'
@@ -38,34 +44,32 @@ class Run(Command):
         )
 
         parser.add_argument(
-            '--silent', '-s',
+            '--background', '-B',
             action='store_true',
             help='Run silently in background instead of tailing the logs'
         )
 
-        parser.add_argument(
-            '--user', '-u',
-            metavar='username',
-            nargs=1,
-            help='Specify the username with which the docker image was named'
-        )
 
-
-    def main(self, args, basedir):
-        if not (args.docker_dev or args.docker_prod or args.front_end or args.back_end):
-            print('At least one of --docker-dev, --docker-prod, --back-end, or --front-end must be specified')
+    def main(self, args):
+        if not (args.docker_dev or args.docker_prod or args.docker_ssl or args.front_end or args.back_end):
+            self.print('At least one of --docker-dev, --docker-prod, --back-end, or --front-end must be specified')
+            return
         if args.back_end:
-            execute('venv/bin/uvicorn main:app --reload', wd=os.path.join(basedir, 'backend'))
+            self.serve_backend()
+            return
         if args.front_end:
-            execute('yarn start', wd=os.path.join(basedir, 'frontend'))
+            self.serve_frontend()
+            return
+        if (args.docker_dev or args.docker_prod or args.docker_ssl):
+            self.serve_docker(docker.get_env(args), args.background)
 
-        docker_prefix = args.user[0] + '/' if args.user else ''
+    def serve_backend(self):
+        self.execute('venv/bin/uvicorn main:app --reload', 'backed')
 
-        if args.docker_dev:
-            execute(docker.run_command(args.user, is_dev=True), wd=basedir)
+    def serve_frontend(self):
+        self.execute('yarn start', 'frontend')
 
-        if args.docker_prod:
-            execute(docker.run_command(args.user, is_dev=False), wd=basedir)
-
+    def serve_docker(self, docker_env, in_background):
+        self.execute('docker-compose -f {} up{}'.format(docker_env, ' --detach' if in_background else ''))
 
 
